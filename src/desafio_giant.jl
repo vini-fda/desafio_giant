@@ -5,7 +5,7 @@ using LinearAlgebra, SparseArrays, Combinatorics
 # that B will become the new Mario Kart Master
 prob_lose(x, y) = y / (x+y)
 
-struct MarkovState{T<:Integer}
+struct MarkovState{T<:Integer,F<:Real}
   # Stores the player sequence
   # in which the first element is the Mario Kart Master,
   # the second element is the challenger(first one in the queue)
@@ -16,12 +16,12 @@ struct MarkovState{T<:Integer}
   # The current amount of times the Mario Kart Master has won
   w::T
 
-  function MarkovState{T}(player_sequence::Vector{T}, H::Vector{T}, w::T) where T <: Integer
+  function MarkovState{T,F}(player_sequence::Vector{T}, H::Vector{F}, w::T) where {T <: Integer, F <: Real}
       new(player_sequence, H[player_sequence], w)
   end
 end
 
-MarkovState(player_sequence, H, w::T) where T <: Integer = MarkovState{T}(player_sequence, H, w)
+MarkovState(player_sequence::Vector{T}, H::Vector{F}, w::T) where {T <: Integer, F <: Real} = MarkovState{T,F}(player_sequence, H, w)
 
 # generates all possible markov states for a given n
 function markov_states(n, H)
@@ -35,14 +35,17 @@ function markov_states(n, H)
   vec([MarkovState(p_seq, H, w) for p_seq in p_seqs, w in w_seq])
 end
 
-# abilities of the players(indexed in order)
-H = [1,1,1]
-#H = [47, 82, 65, 99, 2, 14, 9] # H is for 'habilidade'
-
+function all_equal(V)
+  if length(V) <= 1
+    true
+  else
+    all(x -> x==V[1], V)
+  end
+end
 
 function solve_problem(H)
   n = length(H) # number of players
-  if n > 7
+  if all_equal(H)
     return solve_problem_sameval(H)
   end
   MS = markov_states(n, H)
@@ -206,27 +209,6 @@ function solve_problem_sameval(H)
   # T: matrix which has the transition probabilities
   # to the final states
   T = sparse(rows_T, cols_T, vals_T, m, 2);
-
-  # Full transition matrix
-  P = [S T; zeros(2,m) I]
-
-  @show P
-  
-  # Iterative method
-  # max_error = 1e-7
-  # max_iter = 1000
-  # x = zeros(m+2)
-  # x[1] = 1.0
-  # x = x'
-  # for _ in 1:max_iter
-  #   x_prev = x
-  #   x = x * P
-  #   if norm(x - x_prev) < max_error
-  #     break
-  #   end
-  # end
-
-  # x
 
   IS = Float64.(1.0I - S)
 
